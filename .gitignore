@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Directories / folders
+data/
+
 # Distribution / packaging
 .Python
 build/
@@ -25,6 +28,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.DS_Store
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -50,6 +54,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+test.*
 
 # Translations
 *.mo
@@ -129,6 +134,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.conda/
 
 # Spyder project settings
 .spyderproject
