@@ -6,6 +6,7 @@ author: Hitesh Vaidya
 # import libraries
 import json
 import os
+import torch
 
 def load(path):
     """
@@ -17,29 +18,72 @@ def load(path):
     Returns:
         [type]: [description]
     """
-    data = [json.loads(line) for line in open("data/mr/mr_politicians.json", 'r')]
-    return data
-
-def generate_name_corpus(data):
-    data = load("data/mr/mr_politicians.json")
-    names = generate_name_corpus(data)
-
-    data = load("data/mr/mr_politicians.json")
-    names.extend(generate_name_corpus(data))
-
-    data = load("data/mr/mr_sportsman.json")
-    names.extend(generate_name_corpus(data))
+    names = []
+    print("path: ", path)
+    data = [json.loads(line) for line in open(path, 'r')]
+    for obj in data:
+        names.extend(obj['title'].split(' '))
 
     return names
 
-if __name__ == '__main__':
-    data = load("data/mr/mr_politicians.json")
-    names = generate_name_corpus(data)
 
-    data = load("data/mr/mr_politicians.json")
-    names.extend(generate_name_corpus(data))
+def generate_name_corpus():
+    names = []
 
-    data = load("data/mr/mr_sportsman.json")
-    names.extend(generate_name_corpus(data))
+    # load names of politicians
+    names.extend(load("data/mr/mr_politicians.json"))
 
+    # names of writers
+    names.extend(load("data/mr/mr_writers.json"))
+
+    # names of sportsmen
+    names.extend(load("data/mr/mr_sportsman.json"))
+
+    # eliminate duplicates
+    names = list(set(names))
+
+    return names
+
+def bigrams(data):
+    # characters in the dataset
+    # sorted list of characters in the dataset
+    chars = sorted(list(set(''.join(data))))
+
+    print("unique characters in dataset:")
+    print(chars)
+
+    # create a lookup table from char to int
+    stoi = {s:i for i,s in enumerate(chars)}
+    stoi['<S>'] = len(chars)
+    stoi['<E>'] = len(chars) + 1
+    # Maintain a matrix of [characters x characters] storing number of times a character in column follows the character in a row
+    N = torch.zeros((len(stoi), len(stoi)), dtype=torch.int32)
+
+    bigrams = {}
+
+    # go through each word and create a pair of every occurence of 2 characters in the dataset
+    # make a dictionary that stores the count of number of times two characters occur in a particular order
+    # ex: "hitesh" - ('h','i'), ('i', 't'), ...
+    for word in data:
+        # Add start and end character token
+        chs = ['<S>'] + list(word) + ['<E>']
+        for ch1, ch2 in zip(chs, chs[1:]):
+            # Get the integer corresponding to the character
+            ix1 = stoi[ch1]
+            ix2 = stoi[ch2]
+            # Since ch2 follows ch1, increment the corresponding count in N by 1
+            N[ix1, ix2] += 1
+            bigram = (ch1, ch2)
+            bigrams[bigram] = bigrams.get(bigram, 0) + 1
     
+    # sort the bigrams in the descending order of number of times they occur in a particular order
+    # ex. {('h','i'):3 , ('i', 't'): 1, ...}
+    bigrams = sorted(bigrams.items(), key=lambda kv: -kv[1])
+
+    return N, bigrams
+    
+
+if __name__ == '__main__':
+    names = generate_name_corpus()
+    print("length of corpus: ", len(names))
+    bigrams(names)
