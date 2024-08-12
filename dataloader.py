@@ -7,6 +7,7 @@ author: Hitesh Vaidya
 import json
 import os
 import torch
+import matplotlib.pyplot as plt
 
 def load(path):
     """
@@ -42,24 +43,22 @@ def generate_name_corpus():
     # eliminate duplicates
     names = list(set(names))
 
-    return names
+    return names  
 
 def bigrams(data):
+    bigrams = {}
+
     # characters in the dataset
     # sorted list of characters in the dataset
     chars = sorted(list(set(''.join(data))))
-
-    print("unique characters in dataset:")
-    print(chars)
 
     # create a lookup table from char to int
     stoi = {s:i for i,s in enumerate(chars)}
     stoi['<S>'] = len(chars)
     stoi['<E>'] = len(chars) + 1
+
     # Maintain a matrix of [characters x characters] storing number of times a character in column follows the character in a row
     N = torch.zeros((len(stoi), len(stoi)), dtype=torch.int32)
-
-    bigrams = {}
 
     # go through each word and create a pair of every occurence of 2 characters in the dataset
     # make a dictionary that stores the count of number of times two characters occur in a particular order
@@ -80,10 +79,22 @@ def bigrams(data):
     # ex. {('h','i'):3 , ('i', 't'): 1, ...}
     bigrams = sorted(bigrams.items(), key=lambda kv: -kv[1])
 
-    return N, bigrams
+    itos = {v:k for k,v in stoi.items()}
+
+    return N, bigrams, stoi, itos
     
+def draw_bigram_matrix(N, itos):
+    plt.figure(figsize=(32, 32))
+    plt.imshow(N, cmap='Blues')
+    for i in range(len(N)):
+        for j in range(len(N)):
+            chstr = itos[i] + itos[j]
+            plt.text(j, i, chstr, ha='center', va='bottom', color='gray')
+            plt.text(j, i, N[i, j].item(), ha='center', va='top', color='gray')
+    plt.axis('off')
 
 if __name__ == '__main__':
     names = generate_name_corpus()
     print("length of corpus: ", len(names))
-    bigrams(names)
+    N, bigrams, stoi, itos = bigrams(names)
+    draw_bigram_matrix(N, itos)
